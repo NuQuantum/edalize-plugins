@@ -1,15 +1,7 @@
 import os
-import sys
-import argparse
-import subprocess
-import logging
-import shutil
-import tempfile
 
 from edalize.tools.edatool import Edatool
 from edalize.utils import EdaCommands
-
-logger = logging.getLogger(__name__)
 
 class Flist(Edatool):
 
@@ -84,71 +76,3 @@ class Flist(Edatool):
 
     def absolute_path(self, path):
         return os.path.abspath(os.path.join(self.work_root, path))
-
-
-def post_process(src, dst):
-    
-    soc_repo_root = os.environ.get('SOC_REPO_ROOT')
-    with open(dst, 'w') as ofile:
-        with open(src, 'r') as ifile:
-            for line in ifile.readlines():
-                line.rstrip()
-                line = line.replace(soc_repo_root, '$SOC_REPO_ROOT')
-                ofile.write(line)
-
-
-def flist(args):
-
-    from fusesoc.main import init_logging
-    from fusesoc.vlnv import Vlnv
-    import glob
-
-    init_logging(verbose=False, monochrome=False)
-
-    try:
-        core_info = subprocess.check_output(
-            ["fusesoc", "core", "show", args.system],
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-    except subprocess.CalledProcessError as e:
-        logger.error(e.output)
-        sys.exit(1)
-
-    for line in core_info.split('\n'):
-        if line.startswith('Core root:'):
-            _,path = line.split(':')
-            core_root = path.strip()
-        if line.startswith('Core file:'):
-            _,filename = line.split(':')
-            core_file = filename.strip()
-
-    dst = os.path.join(core_root, core_file.replace('.core', '.f'))
-
-    with tempfile.TemporaryDirectory() as dir:
-        try:
-            subprocess.check_output(
-                ["fusesoc", "run", "--no-export", "--build-root", dir, "--target", "flist", args.system],
-                stderr=subprocess.STDOUT,
-                text=True,
-            )
-        except subprocess.CalledProcessError as e:
-            logger.error(e.output)
-            sys.exit(1)
-
-        src = glob.glob(f"{dir}/**/*.f", recursive=True)[0]
-        post_process(src, dst)
-        logger.info(f"Created filelist at {dst}")
-
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "system", help="FuseSoC VLNV"
-    )
-    return parser.parse_args()
-
-
-def main():
-    args = parse_args()
-    flist(args)
