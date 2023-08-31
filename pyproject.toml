@@ -1,0 +1,22 @@
+[project]
+name = "edalize_plugins"
+description = "A selection of plugins for Edalize"
+version = "0.1.0"
+dependencies = ["edalize"]
+
+[build-system]
+requires = [
+    "setuptools",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+experimental-string-processing = true
+
+[project.scripts]
+flist = "edalize.tools.flist:main"
