@@ -3,6 +3,8 @@ import logging
 import os
 import shutil
 from pathlib import Path
+from typing import Optional
+from typing import Union
 
 from edalize.tools.edatool import Edatool
 from edalize.utils import EdaCommands
@@ -58,9 +60,6 @@ class Flist(Edatool):
         for vlog_file in vlog_files:
             self.f.append(f"{self.absolute_path(vlog_file)}")
 
-        self.edam = edam.copy()
-        self.edam["files"] = unused_files
-
         output_file = self.name + ".f"
         self.edam = edam.copy()
         self.edam["files"] = unused_files
@@ -88,8 +87,44 @@ class Flist(Edatool):
         return os.path.abspath(os.path.join(self.work_root, path))
 
 
-def flist(name, build_root=None):
-    """ """
+def flist(
+    name: str,
+    build_root: Optional[Union[str, Path]] = None,
+    output: Optional[Union[str, Path]] = None,
+) -> Path:
+    """Writes out an EDA style filelist, aka VC file.
+
+    This method runs the Flist Edatool.  It is assumed that a Core file will have an
+    'flist' target that uses the FuseSoC flow API with the Generic flow as follows:
+
+        targets:
+            default: &default
+                filesets:
+                - rtl
+                toplevel: modulename
+
+            flist:
+                <<: *default
+                flow: generic
+                flow_options:
+                    tool: flist
+
+    Limitations:
+        The Flist tool currently only writes out Verilog or SV files. It would be good
+        to update it to output Verilator waivers, for example.
+
+    Arguments:
+        name: VLNV of the core to process or just the N if it resolves to a unique name.
+        build_root: FuseSoC build directory, traditionally 'build' in the directory
+            FuseSoC was called. Here is defaults to /path/to/core/file/parent/.flist
+            unless the user overrides it on the command line.
+        output: Override the default filelist output path. By default it will be placed
+            parallel to the Core file.
+
+    Returns:
+        dst: The Path to the output filelist.
+
+    """
     config = Config()
     fs = Fusesoc(config)
     core = _get_core(fs, name)
@@ -101,8 +136,12 @@ def flist(name, build_root=None):
         build_root = Path(build_root)
 
     setattr(config, "args_build_root", build_root)
+    logger.debug(f"setting build_root to {build_root}")
 
-    flags = {"target": "flist"}
+    # Assumption is that the Core file target is 'flist'.
+    flags = {
+        "target": "flist",
+    }
 
     try:
         flags = dict(core.get_flags(flags["target"]), **flags)
@@ -132,10 +171,22 @@ def flist(name, build_root=None):
         logger.error(str(e))
         exit(1)
 
+    # Get the path to the generated filelist.  We use the sanitized core name
+    # in order to avoid globbing another filelist if the same build_root has
+    # been used for multiple core files.  There should only ever be a single
+    # glob result.
     glob_dir = build_root / core.name.sanitized_name
     src = list(glob_dir.glob("**/*.f"))[0]
-    dst = (core_root / core.core_basename).with_suffix(".f")
+
+    # Specify the destimation path.  The user can override the default which
+    # is to output the filelist at the same path as the parent Core file.
+    if output:
+        dst = Path(output).absolute()
+        assert dst.suffix == ".f", "expecting a .f suffix for filelist path"
+    else:
+        dst = (core_root / core.core_basename).with_suffix(".f")
     shutil.copy2(src, dst)
+
     return dst
 
 
@@ -143,12 +194,14 @@ def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("core", help="VLNV of system to filelist")
     parser.add_argument(
+        "-b",
         "--build-root",
         help=(
             "override the FuseSoC build root which by default will be parallel to the"
             " core file"
         ),
     )
+    parser.add_argument("-o", "--output", help="specify where to dump the filelist")
     parser.add_argument(
         "-v",
         "--verbose",
@@ -163,5 +216,6 @@ def main():
 
     Fusesoc.init_logging(verbose=args.verbose, monochrome=False)
 
-    filelist = flist(name=args.core, build_root=args.build_root)
+    filelist = flist(name=args.core, build_root=args.build_root, output=args.output)
+
     logger.info(f"Created filelist {filelist}")
