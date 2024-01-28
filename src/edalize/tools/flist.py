@@ -97,6 +97,8 @@ def flist(name, build_root=None):
 
     if not build_root:
         build_root = core_root / ".flist"
+    else:
+        build_root = Path(build_root)
 
     setattr(config, "args_build_root", build_root)
 
@@ -130,7 +132,8 @@ def flist(name, build_root=None):
         logger.error(str(e))
         exit(1)
 
-    src = list(Path(config.build_root).glob("**/*.f"))[0]
+    glob_dir = build_root / core.name.sanitized_name
+    src = list(glob_dir.glob("**/*.f"))[0]
     dst = (core_root / core.core_basename).with_suffix(".f")
     shutil.copy2(src, dst)
     return dst
