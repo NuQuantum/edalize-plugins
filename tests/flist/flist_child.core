@@ -27,7 +27,6 @@ targets:
       - rtl
       - tool_verilator ? (verilator_waivers)
       - target_flist ? (verilator_waivers)
-      - target_flist ? (python_things)
     toplevel: example
 
   lint:
