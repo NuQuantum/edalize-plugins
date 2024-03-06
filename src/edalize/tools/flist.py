@@ -57,7 +57,6 @@ class Flist(Edatool):
             file_type = f.get("file_type", "")
             depfile = True
 
-            # get
             matches = [
                 idx
                 for idx, prefix in enumerate(file_types)
