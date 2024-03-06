@@ -101,7 +101,7 @@ class Flist(Edatool):
             self.f.append(f"+incdir+{self.absolute_path(include_dir)}")
 
         # verilog and vlt files are passed to verilator the same way
-        for file in [*vlog_files, *vlt_files]:
+        for file in [*vlt_files, *vlog_files]:
             print(file)
             self.f.append(f"{self.absolute_path(file)}")
 
