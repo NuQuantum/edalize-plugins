@@ -1,0 +1,33 @@
+CAPI=2:
+name: edalizer:test:flist
+description: Toplevel of hierarchy including Xilinx technology primitives.
+
+filesets:
+  rtl:
+    depend:
+      - edalizer:test:flist_child
+    file_type: systemVerilogSource
+
+targets:
+  default: &default
+    filesets:
+      - rtl
+    toplevel: example
+
+  flist:
+    <<: *default
+    flow: generic
+    flow_options:
+      tool: flist
+      file_types:
+        - systemVerilogSource
+        - vlt
+
+  lint:
+    <<: *default
+    default_tool: verilator
+    tools:
+      verilator:
+        mode: lint-only
+        verilator_options:
+          - -Wall

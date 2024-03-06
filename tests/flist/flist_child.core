@@ -1,0 +1,40 @@
+CAPI=2:
+name: edalizer:test:flist_child
+description: Toplevel of hierarchy including Xilinx technology primitives.
+
+filesets:
+
+  rtl:
+    files:
+      - example.sv
+    file_type: systemVerilogSource
+
+  verilator_waivers:
+    files:
+      - waiver.vlt
+    file_type: vlt
+
+  # Causes an flist error if - py is included in file_types
+  # as python files are unhandled
+  python_things:
+      files:
+      - example.py
+      file_type: py
+
+targets:
+  default: &default
+    filesets:
+      - rtl
+      - tool_verilator ? (verilator_waivers)
+      - target_flist ? (verilator_waivers)
+      - target_flist ? (python_things)
+    toplevel: example
+
+  lint:
+    <<: *default
+    default_tool: verilator
+    tools:
+      verilator:
+        mode: lint-only
+        verilator_options:
+          - -Wall
