@@ -14,13 +14,6 @@ filesets:
       - waiver.vlt
     file_type: vlt
 
-  # Causes an flist error if - py is included in file_types
-  # as python files are unhandled
-  python_things:
-      files:
-      - example.py
-      file_type: py
-
 targets:
   default: &default
     filesets:
