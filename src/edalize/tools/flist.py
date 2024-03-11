@@ -102,7 +102,6 @@ class Flist(Edatool):
 
         # verilog and vlt files are passed to verilator the same way
         for file in [*vlt_files, *vlog_files]:
-            print(file)
             self.f.append(f"{self.absolute_path(file)}")
 
         output_file = self.name + ".f"
