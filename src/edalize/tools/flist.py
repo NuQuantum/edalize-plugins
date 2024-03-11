@@ -19,7 +19,13 @@ class Flist(Edatool):
 
     description = "F-list generator"
 
-    TOOL_OPTIONS = {}
+    TOOL_OPTIONS = {
+        "file_types": {
+            "type": "str",
+            "desc": "File types which flist will search for",
+            "list": True,
+        },
+    }
 
     def setup(self, edam):
         super().setup(edam)
@@ -34,19 +40,56 @@ class Flist(Edatool):
             param_str = self._param_value_str(param_value=value, str_quote_style='"')
             self.f.append(f"-pvalue+{self.toplevel}.{key}={param_str}")
 
+        # Get a list of the valid file types. If none is specified use sv and v.
+        file_types = self.tool_options.get(
+            "file_types",
+            ["systemVerilogSource", "verilogSource"],
+        )
+
         incdirs = []
         vlog_files = []
+        vlt_files = []
         depfiles = []
         unused_files = []
 
         for f in self.files:
+
             file_type = f.get("file_type", "")
             depfile = True
-            if file_type.startswith("systemVerilogSource") or file_type.startswith(
-                "verilogSource",
-            ):
-                if not self._add_include_dir(f, incdirs):
-                    vlog_files.append(f["name"])
+
+            matches = [
+                idx
+                for idx, prefix in enumerate(file_types)
+                if file_type.startswith(prefix)
+            ]
+
+            # file type matches one of the passed in ones
+            if matches:
+
+                if len(matches) > 1:
+                    logger.warning(
+                        f"""File type matched multiple prefixes ({[file_types
+                        [idx] for idx in matches]}), proceeding with the first
+                        match ({file_types[matches[0]]})""",
+                    )
+
+                # get the type of the first match
+                file_type = file_types[matches[0]]
+
+                # if its valid, add to the right source list
+                match file_type:
+                    case "systemVerilogSource" | "verilogSource":
+                        if not self._add_include_dir(f, incdirs):
+                            vlog_files.append(f["name"])
+                    case "vlt":
+                        vlt_files.append(f["name"])
+                    case _:
+                        logger.error(
+                            f"""We found a file of type {file_type} which flist
+                            currently does not support. Please remove this from your
+                            core's list of file_types""",
+                        )
+
             else:
                 unused_files.append(f)
                 depfile = False
@@ -57,8 +100,9 @@ class Flist(Edatool):
         for include_dir in incdirs:
             self.f.append(f"+incdir+{self.absolute_path(include_dir)}")
 
-        for vlog_file in vlog_files:
-            self.f.append(f"{self.absolute_path(vlog_file)}")
+        # verilog and vlt files are passed to verilator the same way
+        for file in [*vlt_files, *vlog_files]:
+            self.f.append(f"{self.absolute_path(file)}")
 
         output_file = self.name + ".f"
         self.edam = edam.copy()
@@ -110,8 +154,8 @@ def flist(
                     tool: flist
 
     Limitations:
-        The Flist tool currently only writes out Verilog or SV files. It would be good
-        to update it to output Verilator waivers, for example.
+        The Flist tool currently only writes out Verilog, SV files and Verilator
+        Waivers.
 
     Arguments:
         name: VLNV of the core to process or just the N if it resolves to a unique name.

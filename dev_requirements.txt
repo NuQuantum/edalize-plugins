@@ -1,1 +1,3 @@
+edalize
+fusesoc
 pre-commit

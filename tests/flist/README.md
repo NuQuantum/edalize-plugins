@@ -1,0 +1,1 @@
+This directory can be used as a means of demonstrating the functionality of the flist tool. From anywhere in the edalize-plugins repo run `fusesoc run --target flist edalizer:test:flist` and inspect the output in `build/edalizer_test_flist_0/flist/edalizer_test_flist_0.f` for the correct result.

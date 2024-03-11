@@ -1,3 +1,4 @@
+DIR=$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 VENV=.venv
 
 if [[ ! -e $VENV ]]; then
@@ -5,9 +6,13 @@ if [[ ! -e $VENV ]]; then
     source $VENV/bin/activate
     python -m pip install -U pip wheel
     python -m pip install -r dev_requirements.txt
+    touch $VENV/FUSESOC_IGNORE
 else
     source $VENV/bin/activate
 fi
+
+# FuseSoc Setup
+export FUSESOC_CORES=$DIR
 
 # Install the pre-commit hooks
 pre-commit install
