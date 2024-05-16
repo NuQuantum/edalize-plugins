@@ -39,7 +39,9 @@ class Flist(Edatool):
 
         for key, value in self.vlogparam.items():
             param_str = self._param_value_str(param_value=value, str_quote_style='"')
-            self.f.append(f"-pvalue+{self.toplevel}.{key}={param_str}")
+            if isinstance(value, str):
+                param_str = f"'{param_str}'"
+            self.f.append(f"-pvalue+{key}={param_str}")
 
         # Get a list of the valid file types. If none is specified use sv and v.
         file_types = self.tool_options.get(
