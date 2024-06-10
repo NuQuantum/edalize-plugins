@@ -26,10 +26,18 @@ class Flist(Edatool):
             "desc": "File types which flist will search for",
             "list": True,
         },
+        "simulator": {
+            "type": "str",
+            "desc": "The name of the target simulator",
+        },
     }
 
     def setup(self, edam):
         super().setup(edam)
+
+        simulator = self.tool_options.get("simulator", None)
+        if simulator == "verilator":
+            print("whoops, need to strip the toplevel")
 
         self.f = []
 
@@ -223,6 +231,10 @@ def flist(
         _, backend = fs.get_backend(
             core,
             flags,
+            backendargs=[
+                "--simulator",
+                "verilator",  # REVISIT: can be set from command line args.
+            ],
         )
     except RuntimeError as e:
         logger.error(str(e))
