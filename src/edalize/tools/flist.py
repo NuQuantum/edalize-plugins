@@ -58,7 +58,7 @@ class Flist(Edatool):
 
         for key, value in self.vlogdefine.items():
             define_str = self._param_value_str(param_value=value)
-            prefix_str = self._sim_prefixes[simulator]["define"].format(self)
+            prefix_str = self._sim_prefixes[simulator]["define"]
             self.f.append(f"{prefix_str}{key}={define_str}")
 
         for key, value in self.vlogparam.items():
