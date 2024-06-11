@@ -48,10 +48,6 @@ class Flist(Edatool):
     def setup(self, edam):
         super().setup(edam)
 
-        simulator = self.tool_options.get("simulator", None)
-        if simulator == "verilator":
-            print("whoops, need to strip the toplevel")
-
         self.f = []
 
         # xcelium by default
