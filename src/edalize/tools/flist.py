@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import shutil
+from collections import defaultdict
 from pathlib import Path
 from typing import Optional
 from typing import Union
@@ -26,6 +27,22 @@ class Flist(Edatool):
             "desc": "File types which flist will search for",
             "list": True,
         },
+        "simulator": {
+            "type": "str",
+            "desc": "The name of the target simulator",
+        },
+    }
+
+    # The supported simulators are the keys of this dict
+    _sim_prefixes = {
+        "verilator": {
+            "define": "+define+",
+            "param": "-G",
+        },
+        "xcelium": {
+            "define": "+define+",
+            "param": "-defparam {toplevel}.",
+        },
     }
 
     def setup(self, edam):
@@ -33,13 +50,28 @@ class Flist(Edatool):
 
         self.f = []
 
+        simulator = self.tool_options.get("simulator", None)
+
+        if simulator == "None":
+            simulator = "verilator"
+            logger.warning("No simulator specified for Flist, defaulting to verilator")
+
+        assert (
+            simulator in self._sim_prefixes.keys()
+        ), f"{simulator} not in {self._sim_prefixes.keys()}"
+
         for key, value in self.vlogdefine.items():
             define_str = self._param_value_str(param_value=value)
-            self.f.append(f"+define+{key}={define_str}")
+            prefix_str = self._sim_prefixes[simulator]["define"]
+            self.f.append(f"{prefix_str}{key}={define_str}")
 
         for key, value in self.vlogparam.items():
             param_str = self._param_value_str(param_value=value, str_quote_style='"')
-            self.f.append(f"-pvalue+{self.toplevel}.{key}={param_str}")
+            # Use defaultdict to construct a str() if the key is not in the string
+            # being formatted (via format_map() below)
+            params = defaultdict(str, toplevel=self.toplevel)
+            prefix_str = self._sim_prefixes[simulator]["param"].format_map(params)
+            self.f.append(f"{prefix_str}{key}={param_str}")
 
         # Get a list of the valid file types. If none is specified use sv and v.
         file_types = self.tool_options.get(
@@ -138,6 +170,7 @@ def flist(
     build_root: Optional[Union[str, Path]] = None,
     work_root: Optional[Union[str, Path]] = None,
     output: Optional[Union[str, Path]] = None,
+    simulator: Optional[Union[str, Path]] = None,
 ) -> Path:
     """Writes out an EDA style filelist, aka VC file.
 
@@ -223,6 +256,10 @@ def flist(
         _, backend = fs.get_backend(
             core,
             flags,
+            backendargs=[
+                "--simulator",
+                simulator,
+            ],
         )
     except RuntimeError as e:
         logger.error(str(e))
@@ -283,6 +320,13 @@ def get_parser():
         action="store_true",
         help="use verbose logging",
     )
+    parser.add_argument(
+        "-s",
+        "--simulator",
+        choices=Flist._sim_prefixes.keys(),
+        help="Name of the simulator tool which consumes the flist output",
+        required=False,
+    )
     return parser
 
 
@@ -297,6 +341,7 @@ def main():
         build_root=args.build_root,
         work_root=args.work_root,
         output=args.output,
+        simulator=args.simulator,
     )
 
     logger.info(f"Created filelist {filelist}")
