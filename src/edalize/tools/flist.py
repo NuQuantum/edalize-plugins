@@ -33,7 +33,7 @@ class Flist(Edatool):
         },
     }
 
-    # The supported targets are the keys of this dict
+    # The supported simulators are the keys of this dict
     _sim_prefixes = {
         "verilator": {
             "define": "+define+",
