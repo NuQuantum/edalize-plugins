@@ -37,10 +37,10 @@ class Flist(Edatool):
     _sim_prefixes = {
         "verilator": {
             "define": "+define+",
-            "param": "-pvalue+",
+            "param": "-G",
         },
         "xcelium": {
-            "define": "-define ",
+            "define": "+define+",
             "param": "-defparam {toplevel}.",
         },
     }
@@ -50,8 +50,12 @@ class Flist(Edatool):
 
         self.f = []
 
-        # xcelium by default
         simulator = self.tool_options.get("simulator", None)
+
+        if simulator == "None":
+            simulator = "verilator"
+            logger.warning("No simulator specified for Flist, defaulting to verilator")
+
         assert (
             simulator in self._sim_prefixes.keys()
         ), f"{simulator} not in {self._sim_prefixes.keys()}"
@@ -63,7 +67,7 @@ class Flist(Edatool):
 
         for key, value in self.vlogparam.items():
             param_str = self._param_value_str(param_value=value, str_quote_style='"')
-            # defaultdict constructs a str() as default if the key is not in the string
+            # Use defaultdict to construct a str() if the key is not in the string
             # being formatted (via format_map() below)
             params = defaultdict(str, toplevel=self.toplevel)
             prefix_str = self._sim_prefixes[simulator]["param"].format_map(params)
@@ -321,6 +325,7 @@ def get_parser():
         "--simulator",
         choices=Flist._sim_prefixes.keys(),
         help="Name of the simulator tool which consumes the flist output",
+        required=False,
     )
     return parser
 
