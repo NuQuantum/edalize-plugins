@@ -39,7 +39,10 @@ class Flist(Edatool):
             "define": "+define+",
             "param": "-pvalue+",
         },
-        "xcelium": {"define": "-define ", "param": "-defparam {toplevel}."},
+        "xcelium": {
+            "define": "-define ",
+            "param": "-defparam {toplevel}.",
+        },
     }
 
     def setup(self, edam):
