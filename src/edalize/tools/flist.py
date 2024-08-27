@@ -110,18 +110,17 @@ class Flist(Edatool):
                 file_type = file_types[matches[0]]
 
                 # if its valid, add to the right source list
-                match file_type:
-                    case "systemVerilogSource" | "verilogSource":
-                        if not self._add_include_dir(f, incdirs):
-                            vlog_files.append(f["name"])
-                    case "vlt":
-                        vlt_files.append(f["name"])
-                    case _:
-                        logger.error(
-                            f"""We found a file of type {file_type} which flist
-                            currently does not support. Please remove this from your
-                            core's list of file_types""",
-                        )
+                if file_type in ["systemVerilogSource", "verilogSource"]:
+                    if not self._add_include_dir(f, incdirs):
+                        vlog_files.append(f["name"])
+                elif file_type == "vlt":
+                    vlt_files.append(f["name"])
+                else:
+                    logger.error(
+                        f"""We found a file of type {file_type} which flist
+                        currently does not support. Please remove this from your
+                        core's list of file_types""",
+                    )
 
             else:
                 unused_files.append(f)
