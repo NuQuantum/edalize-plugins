@@ -52,7 +52,7 @@ class Flist(Edatool):
 
         simulator = self.tool_options.get("simulator", None)
 
-        if simulator == "None":
+        if simulator is None:
             simulator = "verilator"
             logger.warning("No simulator specified for Flist, defaulting to verilator")
 
@@ -255,10 +255,7 @@ def flist(
         _, backend = fs.get_backend(
             core,
             flags,
-            backendargs=[
-                "--simulator",
-                simulator,
-            ],
+            backendargs=["--simulator", simulator] if simulator is not None else [],
         )
     except RuntimeError as e:
         logger.error(str(e))
