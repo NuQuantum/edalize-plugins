@@ -76,11 +76,12 @@ class Flist(Edatool):
         # Get a list of the valid file types. If none is specified use sv and v.
         file_types = self.tool_options.get(
             "file_types",
-            ["systemVerilogSource", "verilogSource"],
+            ["systemVerilogSource", "verilogSource", "vhdlSource"],
         )
 
         incdirs = []
         vlog_files = []
+        vhdl_files = []
         vlt_files = []
         depfiles = []
         unused_files = []
@@ -115,6 +116,9 @@ class Flist(Edatool):
                         vlog_files.append(f["name"])
                 elif file_type == "vlt":
                     vlt_files.append(f["name"])
+                elif file_type == "vhdlSource":
+                    if not self._add_include_dir(f, incdirs):
+                                vhdl_files.append(f["name"])
                 else:
                     logger.error(
                         f"""We found a file of type {file_type} which flist
@@ -133,7 +137,7 @@ class Flist(Edatool):
             self.f.append(f"+incdir+{self.absolute_path(include_dir)}")
 
         # verilog and vlt files are passed to verilator the same way
-        for file in [*vlt_files, *vlog_files]:
+        for file in [*vlt_files, *vlog_files, *vhdl_files]:
             self.f.append(f"{self.absolute_path(file)}")
 
         output_file = self.name + ".f"
@@ -165,7 +169,8 @@ class Flist(Edatool):
 
 def flist(
     name: str,
-    flags: Optional[list] = [],
+#    flags: list | None = [],
+    flags: Optional[Union[list, None]] = [],
     build_root: Optional[Union[str, Path]] = None,
     work_root: Optional[Union[str, Path]] = None,
     output: Optional[Union[str, Path]] = None,
