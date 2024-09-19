@@ -118,7 +118,7 @@ class Flist(Edatool):
                     vlt_files.append(f["name"])
                 elif file_type == "vhdlSource":
                     if not self._add_include_dir(f, incdirs):
-                                vhdl_files.append(f["name"])
+                        vhdl_files.append(f["name"])
                 else:
                     logger.error(
                         f"""We found a file of type {file_type} which flist
@@ -169,7 +169,7 @@ class Flist(Edatool):
 
 def flist(
     name: str,
-#    flags: list | None = [],
+    #    flags: list | None = [],
     flags: Optional[Union[list, None]] = [],
     build_root: Optional[Union[str, Path]] = None,
     work_root: Optional[Union[str, Path]] = None,
