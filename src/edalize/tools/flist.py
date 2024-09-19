@@ -169,7 +169,6 @@ class Flist(Edatool):
 
 def flist(
     name: str,
-    #    flags: list | None = [],
     flags: Optional[Union[list, None]] = [],
     build_root: Optional[Union[str, Path]] = None,
     work_root: Optional[Union[str, Path]] = None,
