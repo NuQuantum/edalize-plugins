@@ -80,8 +80,7 @@ class Flist(Edatool):
         )
 
         incdirs = []
-        vlog_files = []
-        vhdl_files = []
+        rtl_files = []
         vlt_files = []
         cpp_incdirs = []
         cpp_files = []
@@ -113,14 +112,11 @@ class Flist(Edatool):
                 file_type = file_types[matches[0]]
 
                 # if its valid, add to the right source list
-                if file_type in ["systemVerilogSource", "verilogSource"]:
+                if file_type in ["systemVerilogSource", "verilogSource", "vhdlSource"]:
                     if not self._add_include_dir(f, incdirs):
-                        vlog_files.append(f["name"])
+                        rtl_files.append(f["name"])
                 elif file_type == "vlt":
                     vlt_files.append(f["name"])
-                elif file_type == "vhdlSource":
-                    if not self._add_include_dir(f, incdirs):
-                        vhdl_files.append(f["name"])
                 elif file_type == "cppSource":
                     if not self._add_include_dir(f, cpp_incdirs):
                         cpp_files.append(f["name"])
@@ -145,7 +141,7 @@ class Flist(Edatool):
             self.f.append(f"-I{self.absolute_path(include_dir)}")
 
         # verilog and vlt files are passed to verilator the same way
-        for file in [*vlt_files, *vlog_files, *vhdl_files]:
+        for file in [*vlt_files, *rtl_files]:
             self.f.append(f"{self.absolute_path(file)}")
 
         output_file = self.name + ".f"
