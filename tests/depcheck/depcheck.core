@@ -1,0 +1,22 @@
+CAPI=2:
+name: edalizer:test:depcheck
+
+filesets:
+  rtl:
+    depend:
+      - edalizer:test:example_dep
+    files:
+      - example.sv
+    file_type: systemVerilogSource
+
+targets:
+  default: &default
+    filesets:
+      - rtl
+    toplevel: example
+
+  depcheck:
+    <<: *default
+    flow: depcheck
+    flow_options:
+      tool: xcelium

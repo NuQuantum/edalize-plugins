@@ -1,0 +1,14 @@
+CAPI=2:
+name: edalizer:test:example_dep
+
+filesets:
+  rtl:
+    files:
+      - example_dep.sv
+    file_type: systemVerilogSource
+
+targets:
+  default: &default
+    filesets:
+      - rtl
+    toplevel: example
