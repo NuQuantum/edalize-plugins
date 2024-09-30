@@ -83,6 +83,8 @@ class Flist(Edatool):
         vlog_files = []
         vhdl_files = []
         vlt_files = []
+        cpp_incdirs = []
+        cpp_files = []
         depfiles = []
         unused_files = []
 
@@ -119,6 +121,9 @@ class Flist(Edatool):
                 elif file_type == "vhdlSource":
                     if not self._add_include_dir(f, incdirs):
                         vhdl_files.append(f["name"])
+                elif file_type == "cppSource":
+                    if not self._add_include_dir(f, cpp_incdirs):
+                        cpp_files.append(f["name"])
                 else:
                     logger.error(
                         f"""We found a file of type {file_type} which flist
@@ -135,6 +140,9 @@ class Flist(Edatool):
 
         for include_dir in incdirs:
             self.f.append(f"+incdir+{self.absolute_path(include_dir)}")
+
+        for include_dir in cpp_incdirs:
+            self.f.append(f"-I{self.absolute_path(include_dir)}")
 
         # verilog and vlt files are passed to verilator the same way
         for file in [*vlt_files, *vlog_files, *vhdl_files]:
