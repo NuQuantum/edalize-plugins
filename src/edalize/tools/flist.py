@@ -45,6 +45,16 @@ class Flist(Edatool):
         },
     }
 
+    # Supported RTL source types. Users may constraint this with the file_types tool
+    # option
+    _rtl_source_types = [
+        "systemVerilogSource",
+        "verilogSource",
+        "vhdlSource",
+        "vhdlSource-2008",
+        "vhdlSource-93",
+    ]
+
     def setup(self, edam):
         super().setup(edam)
 
@@ -76,12 +86,11 @@ class Flist(Edatool):
         # Get a list of the valid file types. If none is specified use sv and v.
         file_types = self.tool_options.get(
             "file_types",
-            ["systemVerilogSource", "verilogSource", "vhdlSource"],
+            self._rtl_source_types,
         )
 
         incdirs = []
-        vlog_files = []
-        vhdl_files = []
+        rtl_files = []
         vlt_files = []
         cpp_incdirs = []
         cpp_files = []
@@ -110,17 +119,14 @@ class Flist(Edatool):
                     )
 
                 # get the type of the first match
-                file_type = file_types[matches[0]]
+                file_type: str = file_types[matches[0]]
 
                 # if its valid, add to the right source list
-                if file_type in ["systemVerilogSource", "verilogSource"]:
+                if file_type in self._rtl_source_types:
                     if not self._add_include_dir(f, incdirs):
-                        vlog_files.append(f["name"])
+                        rtl_files.append(f["name"])
                 elif file_type == "vlt":
                     vlt_files.append(f["name"])
-                elif file_type == "vhdlSource":
-                    if not self._add_include_dir(f, incdirs):
-                        vhdl_files.append(f["name"])
                 elif file_type == "cppSource":
                     if not self._add_include_dir(f, cpp_incdirs):
                         cpp_files.append(f["name"])
@@ -145,7 +151,7 @@ class Flist(Edatool):
             self.f.append(f"-I{self.absolute_path(include_dir)}")
 
         # verilog and vlt files are passed to verilator the same way
-        for file in [*vlt_files, *vlog_files, *vhdl_files]:
+        for file in [*vlt_files, *rtl_files]:
             self.f.append(f"{self.absolute_path(file)}")
 
         output_file = self.name + ".f"
