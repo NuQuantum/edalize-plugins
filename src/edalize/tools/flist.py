@@ -33,16 +33,23 @@ class Flist(Edatool):
         },
     }
 
-    # The supported simulators are the keys of this dict
-    _sim_prefixes = {
-        "verilator": {
+    # Most simulator follow this syntax for defines and parameter passing
+    _default_sim_prefixes = (
+        {
             "define": "+define+",
             "param": "-G",
         },
+    )
+
+    # The supported simulators are the keys of this dict
+    _sim_prefixes = {
+        "verilator": _default_sim_prefixes,
         "xcelium": {
             "define": "+define+",
             "param": "-defparam {toplevel}.",
         },
+        "modelsim": _default_sim_prefixes,
+        "questa": _default_sim_prefixes,
     }
 
     # Supported RTL source types. Users may constraint this with the file_types tool
