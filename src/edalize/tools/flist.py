@@ -91,7 +91,7 @@ class Flist(Edatool):
         result = FileGrouping()
 
         for f in files:
-            file_type = f.get("file_type", "")
+            file_type: str = f.get("file_type", "")
             depfile = True
 
             matches = [
@@ -159,6 +159,10 @@ class Flist(Edatool):
 
         for key, value in self.vlogparam.items():
             param_str = self._param_value_str(param_value=value, str_quote_style='"')
+            # Special case, verilator requires string parameters to be double quoted
+            # See: NQ-3384
+            if simulator == "verilator" and isinstance(value, str):
+                param_str = rf"'{param_str}'"
             # Use defaultdict to construct a str() if the key is not in the string
             # being formatted (via format_map() below)
             params = defaultdict(str, toplevel=self.toplevel)
