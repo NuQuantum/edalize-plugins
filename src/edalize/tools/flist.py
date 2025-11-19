@@ -234,7 +234,12 @@ def flist(
 
     """
     config = Config()
+
+    config.no_export = True  # Do no export RTL source for filelist generation
+    config.resolve_env_vars_early = True  # Force env var resolution in core files
+
     fs = Fusesoc(config)
+
     core = _get_core(fs, name)
     core_root = Path(core.core_root)
 
@@ -248,6 +253,7 @@ def flist(
         glob_dir = build_root / core.name.sanitized_name
         setattr(config, "args_build_root", build_root)
 
+    print(core_root)
     # Assumption is that the Core file target is 'flist'.
     _flags = {
         "target": "flist",
