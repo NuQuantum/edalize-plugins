@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class FileList:
+class FileGrouping:
     """Collects files into logical groups."""
 
     incdirs: list[str] = field(default_factory=list)
@@ -75,10 +75,10 @@ class Flist(Edatool):
         "vhdlSource-93",
     ]
 
-    def _generate_file_list(
+    def _group_files(
         self, files: list[dict[str, Any]], file_types: list[str]
-    ) -> FileList:
-        """Generate an ordered file list object from a list of files.
+    ) -> FileGrouping:
+        """Sort the list of input files into logical groups.
 
         Args:
             files: The list of file specification dictionaries (from edalize)
@@ -88,7 +88,7 @@ class Flist(Edatool):
             FileList: The grouped file list object
 
         """
-        result = FileList()
+        result = FileGrouping()
 
         for f in files:
             file_type = f.get("file_type", "")
@@ -149,9 +149,8 @@ class Flist(Edatool):
             simulator = "verilator"
             logger.warning("No simulator specified for Flist, defaulting to verilator")
 
-        assert simulator in self._SIM_PREFIXES, (
-            f"{simulator} not in {self._SIM_PREFIXES.keys()}"
-        )
+        if simulator not in self._SIM_PREFIXES:
+            raise KeyError(f"{simulator} not in {self._SIM_PREFIXES.keys()}")
 
         for key, value in self.vlogdefine.items():
             define_str = self._param_value_str(param_value=value)
@@ -172,21 +171,21 @@ class Flist(Edatool):
             self._RTL_SOURCE_TYPES,
         )
 
-        file_list = self._generate_file_list(self.files, file_types)
+        file_groups = self._group_files(self.files, file_types)
 
-        for include_dir in file_list.incdirs:
+        for include_dir in file_groups.incdirs:
             self.f.append(f"+incdir+{self.absolute_path(include_dir)}")
 
-        for include_dir in file_list.cpp_incdirs:
+        for include_dir in file_groups.cpp_incdirs:
             self.f.append(f"-I{self.absolute_path(include_dir)}")
 
         # verilog and vlt files are passed to verilator the same way
-        for file in [*file_list.vlt_files, *file_list.rtl_files]:
+        for file in [*file_groups.vlt_files, *file_groups.rtl_files]:
             self.f.append(f"{self.absolute_path(file)}")
 
         output_file = self.name + ".f"
         self.edam = edam.copy()
-        self.edam["files"] = file_list.unused_files
+        self.edam["files"] = file_groups.unused_files
         self.edam["files"].append(
             {
                 "name": output_file,
@@ -198,7 +197,7 @@ class Flist(Edatool):
         commands.add(
             [],
             [output_file],
-            file_list.depfiles,
+            file_groups.depfiles,
         )
 
         commands.set_default_target(output_file)
