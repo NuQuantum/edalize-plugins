@@ -1,4 +1,0 @@
-simplesat == 0.8.2
-edalize
-fusesoc
-pre-commit
