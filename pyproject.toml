@@ -1,22 +1,79 @@
 [project]
 name = "edalize_plugins"
 description = "A selection of plugins for Edalize"
-version = "0.1.0"
-dependencies = ["edalize"]
+dynamic = ["version"]
+requires-python = ">=3.11,<3.12"
+authors = [{ name = "Nu Quantum Ltd." }]
+dependencies = [
+    "edalize"
+]
+
+[project.optional-dependencies]
+dev = [
+    "simplesat == 0.8.2",
+    "edalize",
+    "fusesoc",
+    "pre-commit",
+]
 
 [build-system]
-requires = [
-    "setuptools",
-    "wheel",
-]
-build-backend = "setuptools.build_meta"
+build-backend = "hatchling.build"
+requires = ["hatchling", "uv-dynamic-versioning"]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.hatch]
+metadata.allow-direct-references = true
+version.source = "uv-dynamic-versioning"
 
-[tool.black]
-line-length = 88
-experimental-string-processing = true
+[tool.hatch.build.targets.wheel]
+packages = ["src/edalize"] # because the package name doesnt match the directory name
+
+[tool.uv-dynamic-versioning]
+dirty = true
+metadata = true
+pattern = 'default-unprefixed' # because default requires a 'v' prefix
+vcs = "git"
 
 [project.scripts]
 flist = "edalize.tools.flist:main"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"  # Match minimum requires-python version
+fix = true
+unsafe-fixes = true
+
+[tool.ruff.format]
+skip-magic-trailing-comma = false # preserve trailing comma formatting
+
+[tool.ruff.lint]
+select = [
+    "F",    # Pyflakes (undefined names, unused imports)
+    "E",    # pycodestyle (style errors)
+    "W",    # pycodestyle (style warnings)
+    "I",    # isort (import sorting)
+    "N",    # pep8-naming
+    "D",    # pydocstyle
+    "UP",   # pyupgrade (modernize syntax)
+    "YTT",  # flake8-2020 (year-based checks)
+    "ANN",  # flake8-annotations
+    "B",    # flake8-bugbear (common bugs)
+    "A",    # flake8-builtins (shadowing builtins)
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "ARG",  # flake8-unused-arguments
+    "PTH",  # flake8-use-pathlib
+    "PD",   # pandas-vet
+    "PL",   # pylint rules
+    "PERF", # perflint
+    "RUF",  # ruff-specified rules
+]
+ignore = [
+    "T201", # remove print (we use print quite a lot in experiments)
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = false
