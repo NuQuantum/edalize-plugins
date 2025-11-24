@@ -68,7 +68,7 @@ select = [
     "RUF",  # ruff-specified rules
 ]
 ignore = [
-    "T201", # remove print (we use print quite a lot in experiments)
+    "T201", # remove print (used for use output in some cases)
 ]
 
 [tool.mypy]
