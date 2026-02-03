@@ -297,7 +297,7 @@ def flist(  # noqa: PLR0912, PLR0913, PLR0915
     # Combine the user flags and the flist flags
     try:
         # Assumption is that the Core file target is 'flist'.
-        combined_flags = dict(core.get_flags("flist"), **user_flags)
+        combined_flags = dict(core.get_flags("flist") | user_flags, target="flist")
     except SyntaxError as e:
         logger.error(str(e))
         sys.exit(1)
