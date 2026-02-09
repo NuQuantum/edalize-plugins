@@ -8,7 +8,7 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, NamedTuple
 
 from edalize.tools.edatool import Edatool
 from edalize.utils import EdaCommands
@@ -31,6 +31,14 @@ class FileGrouping:
     unused_files: list[dict[str, Any]] = field(default_factory=list)
 
 
+class SimRules(NamedTuple):
+    """Defines the simulator formatting rules."""
+
+    define: str
+    param: str
+    string_escape: str
+
+
 class Flist(Edatool):
     """Edalize extension which writes a list of all project file paths to a .f file."""
 
@@ -49,20 +57,22 @@ class Flist(Edatool):
     }
 
     # Most simulator follow this syntax for defines and parameter passing
-    _DEFAULT_SIM_PREFIXES: ClassVar[dict[str, str]] = {
-        "define": "+define+",
-        "param": "-G",
-    }
+    _DEFAULT_SIM_RULES: ClassVar[SimRules] = SimRules(
+        define="+define+",
+        param="-G",
+        string_escape=r"'{value}'",
+    )
 
     # The supported simulators are the keys of this dict
-    _SIM_PREFIXES: ClassVar[dict[str, dict[str, str]]] = {
-        "verilator": _DEFAULT_SIM_PREFIXES,
-        "xcelium": {
-            "define": "+define+",
-            "param": "-defparam {toplevel}.",
-        },
-        "modelsim": _DEFAULT_SIM_PREFIXES,
-        "questa": _DEFAULT_SIM_PREFIXES,
+    _SIM_RULES: ClassVar[dict[str, SimRules]] = {
+        "verilator": _DEFAULT_SIM_RULES,
+        "xcelium": SimRules(
+            define="+define+",
+            param="-defparam {toplevel}.",
+            string_escape=r"\"{value}\"",
+        ),
+        "modelsim": _DEFAULT_SIM_RULES,
+        "questa": _DEFAULT_SIM_RULES,
     }
 
     # Supported RTL source types. Users may constraint this with the file_types tool
@@ -144,29 +154,29 @@ class Flist(Edatool):
         self.f = []
 
         simulator = self.tool_options.get("simulator", None)
-
         if simulator is None:
             simulator = "verilator"
             logger.warning("No simulator specified for Flist, defaulting to verilator")
 
-        if simulator not in self._SIM_PREFIXES:
-            raise KeyError(f"{simulator} not in {self._SIM_PREFIXES.keys()}")
+        try:
+            rules = self._SIM_RULES[simulator]
+        except KeyError as e:
+            raise KeyError(f"{simulator} not in {self._SIM_RULES.keys()}") from e
 
         for key, value in self.vlogdefine.items():
             define_str = self._param_value_str(param_value=value)
-            prefix_str = self._SIM_PREFIXES[simulator]["define"]
-            self.f.append(f"{prefix_str}{key}={define_str}")
+            self.f.append(f"{rules.define}{key}={define_str}")
 
         for key, value in self.vlogparam.items():
             param_str = self._param_value_str(param_value=value, str_quote_style='"')
             # Special case, verilator requires string parameters to be double quoted
             # See: NQ-3384
-            if simulator == "verilator" and isinstance(value, str):
-                param_str = rf"'{param_str}'"
+            if isinstance(value, str):
+                param_str = rules.string_escape.format(value=param_str)
             # Use defaultdict to construct a str() if the key is not in the string
             # being formatted (via format_map() below)
             params = defaultdict(str, toplevel=self.toplevel)
-            prefix_str = self._SIM_PREFIXES[simulator]["param"].format_map(params)
+            prefix_str = rules.param.format_map(params)
             self.f.append(f"{prefix_str}{key}={param_str}")
 
         # Get a list of the valid file types. If none is specified use sv and v.
@@ -373,7 +383,7 @@ def _get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-s",
         "--simulator",
-        choices=Flist._SIM_PREFIXES.keys(),
+        choices=Flist._SIM_RULES.keys(),
         help="Name of the simulator tool which consumes the flist output",
         required=False,
     )
